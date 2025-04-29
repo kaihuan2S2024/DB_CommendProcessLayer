@@ -11,6 +11,9 @@
 
 // Function to handle CREATE INDEX statements
 void handleCreateIndex(const std::string &statement) {
+
+    std::cout << "DEBUG: Entering handleCreateIndex" << std::endl;
+
     // Simplified parsing of CREATE INDEX statement
     std::string upperStmt = statement;
     std::transform(upperStmt.begin(), upperStmt.end(), upperStmt.begin(), ::toupper);
@@ -74,23 +77,7 @@ void handleCreateIndex(const std::string &statement) {
 
 void executeSql(const std::string &statement) {
   try {
-
-    // Check for EXPLAIN command
-    if (statement.find("EXPLAIN") == 0) {
-      // Parse the SQL statement that follows EXPLAIN
-      std::string queryToExplain = statement.substr(8); // Skip "EXPLAIN "
-
-      // Use the QueryPlan class to analyze the query
-      QueryPlan plan = analyzeQuery(queryToExplain);
-      plan.print();
-      return;
-    }
-
-    // Check for CREATE INDEX command
-    if (statement.find("CREATE INDEX") == 0) {
-      handleCreateIndex(statement);
-      return;
-    }
+    std::cout << "DEBUG: Processing statement: " << statement << std::endl;
 
     ANTLRInputStream input(statement);
     MySqlLexer lexer(&input);
@@ -105,10 +92,35 @@ void executeSql(const std::string &statement) {
     auto s = tree->toStringTree(&parser, true);
     auto t1 = tree->children[0]->children[0];
     SqlStatement *sqlStatement;
+
+    // Rest of your existing code...
+    // After parsing, print the type of the statement
+    std::cout << "DEBUG: Statement type: " << typeid(*t1).name() << std::endl;
+
     if (listener.IsSyntaxError()) {
       // TODO: Do something about the syntax error
       std::cout << "We are doing something about syntax error!" << std::endl;
       listener.SetSyntaxError(false);
+      return;
+    }
+    // Handle the different statement types
+    if (typeid(*t1) == typeid(antlrcpptest::MySqlParser::FullDescribeStatementContext)) {
+      // Handle EXPLAIN statement
+      std::cout << "DEBUG: EXPLAIN statement detected" << std::endl;
+
+      // Extract the query to explain - this is simplified and may need adjustment
+      std::string queryToExplain = statement.substr(statement.find_first_of(" \t",
+                                    statement.find("EXPLAIN")) + 1);
+
+      // Generate and display the query plan
+      QueryPlan plan = analyzeQuery(queryToExplain);
+      plan.print();
+      return;
+    }
+    else if (typeid(*t1) == typeid(antlrcpptest::MySqlParser::CreateIndexContext)) {
+      // Handle CREATE INDEX statement
+      std::cout << "DEBUG: CREATE INDEX statement detected" << std::endl;
+      handleCreateIndex(statement);
       return;
     }
     if (typeid(*t1) ==
