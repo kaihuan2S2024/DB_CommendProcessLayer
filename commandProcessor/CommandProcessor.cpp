@@ -74,6 +74,24 @@ void handleCreateIndex(const std::string &statement) {
 
 void executeSql(const std::string &statement) {
   try {
+
+    // Check for EXPLAIN command
+    if (statement.find("EXPLAIN") == 0) {
+      // Parse the SQL statement that follows EXPLAIN
+      std::string queryToExplain = statement.substr(8); // Skip "EXPLAIN "
+
+      // Use the QueryPlan class to analyze the query
+      QueryPlan plan = analyzeQuery(queryToExplain);
+      plan.print();
+      return;
+    }
+
+    // Check for CREATE INDEX command
+    if (statement.find("CREATE INDEX") == 0) {
+      handleCreateIndex(statement);
+      return;
+    }
+
     ANTLRInputStream input(statement);
     MySqlLexer lexer(&input);
     CommonTokenStream tokens(&lexer);
